@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
-import { subscribeToGame } from '@/lib/game-utils';
 import { Game, Player, GameStatus } from '@/types/game';
 import { getGameByCode, getGameById } from '@/lib/api-helpers';
+import { subscribeToGame } from '@/lib/game-subscription';
 import AdSense from '@/components/AdSense';
 
 function GamePageContent() {

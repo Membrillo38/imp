@@ -1,11 +1,22 @@
 import { supabase, isSupabaseConfigured } from './supabase';
-import { prisma } from './prisma';
 import { Game, Player, GameStatus, GameSettings, GameMode } from '@/types/game';
 import { getRandomWord } from './words';
 import { prismaGameToGame } from './game-helpers';
 
+// Importar Prisma solo cuando sea necesario (server-side)
+// Esto evita que Prisma se incluya en el bundle del cliente
+async function getPrisma() {
+  if (typeof window !== 'undefined') {
+    throw new Error('Prisma solo puede usarse en el servidor');
+  }
+  const { prisma } = await import('./prisma');
+  return prisma;
+}
+
 export async function createGame(leaderName: string, settings: GameSettings): Promise<Game | null> {
   try {
+    const prisma = await getPrisma();
+    
     // Generar código único de 6 dígitos
     let code: string;
     let isUnique = false;
@@ -47,6 +58,7 @@ export async function createGame(leaderName: string, settings: GameSettings): Pr
 
 export async function joinGame(code: string, playerName: string): Promise<Game | null> {
   try {
+    const prisma = await getPrisma();
     const gameData = await prisma.game.findUnique({
       where: { code },
     });
@@ -87,6 +99,7 @@ export async function joinGame(code: string, playerName: string): Promise<Game |
 
 export async function startGame(gameId: string): Promise<boolean> {
   try {
+    const prisma = await getPrisma();
     const gameData = await prisma.game.findUnique({
       where: { id: gameId },
     });
@@ -145,6 +158,7 @@ export async function startGame(gameId: string): Promise<boolean> {
 
 export async function updateGameStatus(gameId: string, status: GameStatus, updates?: Partial<Game>): Promise<boolean> {
   try {
+    const prisma = await getPrisma();
     const gameData = await prisma.game.findUnique({
       where: { id: gameId },
     });
@@ -196,6 +210,7 @@ export async function updateGameStatus(gameId: string, status: GameStatus, updat
 
 export async function submitAnswer(gameId: string, playerId: string, answer: string): Promise<boolean> {
   try {
+    const prisma = await getPrisma();
     const gameData = await prisma.game.findUnique({
       where: { id: gameId },
     });
@@ -258,6 +273,7 @@ export async function submitAnswer(gameId: string, playerId: string, answer: str
 
 export async function submitVote(gameId: string, voterId: string, votedPlayerId: string): Promise<boolean> {
   try {
+    const prisma = await getPrisma();
     const gameData = await prisma.game.findUnique({
       where: { id: gameId },
     });
@@ -295,6 +311,7 @@ export async function submitVote(gameId: string, voterId: string, votedPlayerId:
 
 export async function nextRound(gameId: string): Promise<boolean> {
   try {
+    const prisma = await getPrisma();
     const gameData = await prisma.game.findUnique({
       where: { id: gameId },
     });
@@ -351,6 +368,7 @@ export async function nextRound(gameId: string): Promise<boolean> {
 
 export async function processVotingResults(gameId: string): Promise<boolean> {
   try {
+    const prisma = await getPrisma();
     const gameData = await prisma.game.findUnique({
       where: { id: gameId },
     });
@@ -430,54 +448,5 @@ export async function processVotingResults(gameId: string): Promise<boolean> {
   }
 }
 
-export function subscribeToGame(gameId: string, callback: (game: Game) => void) {
-  // Polling cada 2 segundos para obtener actualizaciones
-  const interval = setInterval(async () => {
-    try {
-      const res = await fetch(`/api/games/id/${gameId}`);
-      if (res.ok) {
-        const game = await res.json();
-        callback(game);
-      }
-    } catch (error) {
-      console.error('Error en polling:', error);
-    }
-  }, 2000);
-
-  // También intentar usar Supabase Realtime si está disponible
-  if (isSupabaseConfigured()) {
-    const channel = supabase
-      .channel(`game:${gameId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'games',
-          filter: `id=eq.${gameId}`,
-        },
-        async (payload) => {
-          if (payload.new) {
-            try {
-              const res = await fetch(`/api/games/id/${gameId}`);
-              if (res.ok) {
-                const game = await res.json();
-                callback(game);
-              }
-            } catch (error) {
-              callback(payload.new as Game);
-            }
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      clearInterval(interval);
-      supabase.removeChannel(channel);
-    };
-  }
-
-  return () => clearInterval(interval);
-}
+// subscribeToGame movido a lib/game-subscription.ts para evitar importar Prisma en el cliente
 

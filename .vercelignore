@@ -1,0 +1,6 @@
+# Ignorar archivos innecesarios en Vercel
+node_modules
+.next
+.env.local
+.env*.local
+
