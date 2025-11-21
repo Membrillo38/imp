@@ -24,9 +24,7 @@ cd my-app
 
 ### 2. Instalar dependencias
 
-```bash
 npm install
-```
 
 ### 3. Configurar Supabase y Base de Datos
 
