@@ -15,12 +15,7 @@ Un juego multijugador en tiempo real tipo "Among Us" donde los jugadores deben e
 
 ## 🚀 Instalación
 
-### 1. Clonar el repositorio
 
-```bash
-git clone <tu-repositorio>
-cd my-app
-```
 
 ### 2. Instalar dependencias
 
