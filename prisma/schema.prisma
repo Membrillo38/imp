@@ -1,0 +1,32 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Game {
+  id                    String   @id @default(uuid())
+  code                  String   @unique
+  status                String   @default("waiting") // waiting, starting, word_reveal, discussion, voting, results, finished
+  mode                  String   @default("voice") // voice, text
+  roundTime             Int      @default(60) @map("round_time")
+  currentRound          Int      @default(0) @map("current_round")
+  maxRounds             Int      @default(3) @map("max_rounds")
+  currentWord           String?  @map("current_word")
+  impostorId            String?  @map("impostor_id")
+  leaderId              String   @map("leader_id")
+  players               Json     // Array de Player
+  votes                  Json?    // Object con votos
+  roundStartedAt        DateTime? @map("round_started_at")
+  currentTurnPlayerId   String?  @map("current_turn_player_id")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("games")
+  @@index([code])
+}
